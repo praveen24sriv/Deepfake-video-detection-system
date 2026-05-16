@@ -141,3 +141,62 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+.eggs/
+
+# Jupyter
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+
+# Virtual environments
+venv/
+env/
+.env
+.venv
+
+# Data & datasets (too large for git)
+*.zip
+*.tar
+*.tar.gz
+*.h5
+*.hdf5
+*.csv
+*.mp4
+*.avi
+*.mov
+
+# Model weights (too large for git)
+*.pt
+*.pth
+*.pkl
+*.onnx
+
+# Kaggle
+kaggle.json
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# VS Code
+.vscode/
+
+# Colab
+*.ipynb_checkpoints
+
+# Logs
+*.log
+logs/
+EOF
