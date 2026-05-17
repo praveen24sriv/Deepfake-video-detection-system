@@ -795,9 +795,6 @@ export default function App() {
       <UploadSection />
       <Dashboard />
       <Features />
-      <footer>
-        Built with ❤️ for <span>DeepFake Video Detection System</span> — Final Year Engineering Project
-      </footer>
     </>
   )
 }
