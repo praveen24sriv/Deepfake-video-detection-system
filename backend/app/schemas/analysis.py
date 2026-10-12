@@ -11,7 +11,6 @@ class VideoStats(BaseModel):
     sampled_frames: int
 
 
-
 class PreprocessingStats(BaseModel):
     frames_read: int
     frames_sampled: int
@@ -21,7 +20,6 @@ class PreprocessingStats(BaseModel):
     usable_frames: int
     model_frames_used: int
     average_blur_score: float
-
 
 
 class SuspiciousTimeline(BaseModel):
