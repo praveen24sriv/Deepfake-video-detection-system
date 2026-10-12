@@ -18,6 +18,8 @@ class PreprocessingStats(BaseModel):
     frames_without_face: int
     blurred_frames: int
     usable_frames: int
+    model_frames_used: int
+    average_blur_score: float
 
 
 class SuspiciousTimeline(BaseModel):

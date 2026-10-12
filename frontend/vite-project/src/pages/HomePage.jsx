@@ -27,13 +27,13 @@ const STEPS = [
 function HeroIllustration() {
   return (
     <svg className="hero-art" viewBox="0 0 320 220" role="img" aria-label="Illustration of a video frame with a detected face region">
-      <rect x="8" y="8" width="304" height="204" rx="16" fill="#fff" stroke="#e2e8f0" strokeWidth="2" />
-      <rect x="24" y="24" width="272" height="140" rx="10" fill="#eef2ff" />
-      <circle cx="160" cy="84" r="28" fill="#c7d2fe" />
-      <path d="M104 164c4-30 28-44 56-44s52 14 56 44" fill="#c7d2fe" />
-      <path d="M118 52v-12h12M202 52v-12h-12M118 116v12h12M202 116v12h-12" fill="none" stroke="#4f46e5" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-      <rect x="24" y="180" width="272" height="6" rx="3" fill="#e2e8f0" />
-      <rect x="24" y="180" width="96" height="6" rx="3" fill="#4f46e5" />
+      <rect x="8" y="8" width="304" height="204" rx="16" fill="#fff" stroke="#d6e6ef" strokeWidth="2" />
+      <rect x="24" y="24" width="272" height="140" rx="10" fill="#d6e6ef" />
+      <circle cx="160" cy="84" r="28" fill="#7fa6b8" />
+      <path d="M104 164c4-30 28-44 56-44s52 14 56 44" fill="#7fa6b8" />
+      <path d="M118 52v-12h12M202 52v-12h-12M118 116v12h12M202 116v12h-12" fill="none" stroke="#2a3e4b" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      <rect x="24" y="180" width="272" height="6" rx="3" fill="#d6e6ef" />
+      <rect x="24" y="180" width="96" height="6" rx="3" fill="#2a3e4b" />
     </svg>
   )
 }

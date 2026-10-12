@@ -147,7 +147,7 @@ export default function AnalyzePage() {
       {status === 'done' && result && <ResultCard key={result.heatmapUrl || 'r'} result={result} />}
 
       {status === 'idle' && !file && (
-        <p className="empty muted">Choose a video above to get started.</p>
+        <p className="empty muted">Choose a video to get started.</p>
       )}
     </div>
   )

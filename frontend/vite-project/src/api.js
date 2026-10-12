@@ -211,6 +211,8 @@ export function parseAnalysisResponse(data) {
       withoutFace: numOrNull(pre.frames_without_face),
       blurred: numOrNull(pre.blurred_frames),
       usable: numOrNull(pre.usable_frames),
+      modelUsed: numOrNull(pre.model_frames_used),
+      avgBlur: numOrNull(pre.average_blur_score),
     },
     video: {
       filename: typeof video.filename === 'string' ? video.filename : null,

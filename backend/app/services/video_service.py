@@ -109,7 +109,7 @@ class VideoService:
     ):
 
         sample_count = min(
-            settings.sample_frames,
+            settings.extracted_frames,
             frame_count,
         )
 

@@ -1,21 +1,40 @@
-/* Design tokens and base styles */
+/* Design tokens and base styles
+ * Palette:  #F7FBFD (lightest)  #D6E6EF (soft)  #7FA6B8 (mid)  #2A3E4B (dark)
+ * Note: #7FA6B8 is only ~2.6:1 against white, so it is used for accents and
+ * borders only. Text and primary buttons use #2A3E4B (~11:1 against white).
+ */
 :root {
-  --bg: #f8fafc;
+  --c-lightest: #f7fbfd;
+  --c-soft: #d6e6ef;
+  --c-mid: #7fa6b8;
+  --c-dark: #2a3e4b;
+
+  --bg: var(--c-lightest);
   --surface: #ffffff;
-  --text: #0f172a;
-  --text-muted: #5b6678;
-  --border: #e2e8f0;
-  --accent: #4f46e5;
-  --accent-hover: #4338ca;
-  --accent-soft: #eef2ff;
+  --text: var(--c-dark);
+  --text-muted: #566e7e;
+  --border: var(--c-soft);
+  --border-strong: var(--c-mid);
+  --accent: var(--c-dark);
+  --accent-hover: #1d2d38;
+  --accent-mid: var(--c-mid);
+  --accent-soft: var(--c-soft);
+  --neutral-soft: #eaf3f8;
+
+  /* Verdict colours stay red/green so REAL / FAKE remain instantly recognisable. */
   --danger: #b91c1c;
   --danger-soft: #fef2f2;
   --success: #15803d;
   --success-soft: #f0fdf4;
-  --neutral-soft: #f1f5f9;
+
   --radius: 14px;
-  --shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 16px rgba(15, 23, 42, 0.05);
+  --shadow: 0 1px 2px rgba(42, 62, 75, 0.05), 0 4px 16px rgba(42, 62, 75, 0.07);
+  --shadow-lift: 0 2px 4px rgba(42, 62, 75, 0.06), 0 10px 28px rgba(42, 62, 75, 0.12);
   --font: 'Sora', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* Fluid page gutter + wide content cap so the layout fills the window. */
+  --gutter: clamp(20px, 5vw, 88px);
+  --content-max: 1760px;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -38,7 +57,7 @@ button { font: inherit; }
 img, video, svg { max-width: 100%; }
 
 :focus-visible {
-  outline: 3px solid rgba(79, 70, 229, 0.45);
+  outline: 3px solid rgba(42, 62, 75, 0.55);
   outline-offset: 2px;
 }
 
