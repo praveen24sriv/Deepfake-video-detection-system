@@ -199,4 +199,4 @@ kaggle.json
 # Logs
 *.log
 logs/
-EOF
+backend/.venv312/

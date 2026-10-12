@@ -21,9 +21,14 @@ class Settings(BaseSettings):
         ".mov",
     )
 
-    sample_frames: int = 10
+    # Video preprocessing
+    extracted_frames: int = 32
+    sample_frames: int = 16
+
+    # Face preprocessing
     blur_threshold: float = 50.0
     frame_size: tuple[int, int] = (224, 224)
+    face_crop_margin: float = 1.3
 
     model_name: str = "DeepGuard Spatiotemporal Detector"
     model_version: str = "0.1.0-demo"
