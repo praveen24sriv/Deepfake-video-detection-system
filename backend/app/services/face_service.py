@@ -64,33 +64,19 @@ class FaceDetectionService:
         if w <= 0 or h <= 0:
             return None
 
+        # Same square crop as training (deepguard.square_box): side = longest
+        # face side x margin, limited to the frame, and shifted to stay inside it.
         height, width = frame.shape[:2]
         center_x = x + w / 2.0
         center_y = y + h / 2.0
 
-        side = max(
-            1,
-            int(np.ceil(max(w, h) * settings.face_crop_margin)),
-        )
+        side = min(max(w, h) * settings.face_crop_margin, width, height)
+        x1 = int(np.clip(center_x - side / 2.0, 0, width - side))
+        y1 = int(np.clip(center_y - side / 2.0, 0, height - side))
+        x2 = x1 + int(side)
+        y2 = y1 + int(side)
 
-        padded = cv2.copyMakeBorder(
-            frame,
-            top=side,
-            bottom=side,
-            left=side,
-            right=side,
-            borderType=cv2.BORDER_REPLICATE,
-        )
-
-        center_x += side
-        center_y += side
-
-        x1 = int(round(center_x - side / 2.0))
-        y1 = int(round(center_y - side / 2.0))
-        x2 = x1 + side
-        y2 = y1 + side
-
-        crop = padded[y1:y2, x1:x2]
+        crop = frame[y1:y2, x1:x2]
 
         if crop.size == 0:
             return None

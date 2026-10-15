@@ -21,6 +21,23 @@ function Verdict({ result }) {
     )
   }
 
+  if (verdict === 'NO_FACE') {
+    return (
+      <div className="verdict verdict-neutral">
+        <span className="verdict-icon">
+          <InfoIcon />
+        </span>
+        <div>
+          <p className="verdict-label">No face found</p>
+          <p className="verdict-sub">
+            No face was detected in the sampled frames, so this video could not be classified.
+            Try a video where a face is clearly visible.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   if (verdict === 'MODEL_UNAVAILABLE') {
     return (
       <div className="verdict verdict-neutral">
@@ -118,15 +135,26 @@ export default function ResultCard({ result }) {
         <figure className="figure">
           <img
             src={result.heatmapUrl}
-            alt="Development visualization of an analyzed face frame"
+            alt={
+              result.model.demoMode === false
+                ? 'Grad-CAM heatmap on the most suspicious face frame'
+                : 'Development visualization of an analyzed face frame'
+            }
             onError={() => setImageFailed(true)}
           />
-          <figcaption>
-            <strong>Development visualization.</strong> This is a simple edge-based overlay on one
-            analyzed face frame. It is not Grad-CAM and does not show what a model paid attention
-            to.
-            {result.note && <span className="muted"> Server note: {result.note}</span>}
-          </figcaption>
+          {result.model.demoMode === false ? (
+            <figcaption>
+              <strong>Grad-CAM heatmap.</strong> Red areas influenced the model's fake score the
+              most, shown on the frame it found most suspicious.
+            </figcaption>
+          ) : (
+            <figcaption>
+              <strong>Development visualization.</strong> This is a simple edge-based overlay on
+              one analyzed face frame. It is not Grad-CAM and does not show what a model paid
+              attention to.
+              {result.note && <span className="muted"> Server note: {result.note}</span>}
+            </figcaption>
+          )}
         </figure>
       )}
 

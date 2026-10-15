@@ -87,12 +87,12 @@ class AnalysisService:
         # 3. Select at most settings.sample_frames crops for model inference.
         # Selection is distributed across the available valid face crops.
         if len(crops) > settings.sample_frames:
+            # Rounded like training (16 of 32 -> frames 0, 2, ... 14, 17, 19, ... 31).
             selected_indices = np.linspace(
                 0,
                 len(crops) - 1,
                 num=settings.sample_frames,
-                dtype=int,
-            ).tolist()
+            ).round().astype(int).tolist()
 
             model_crops = [crops[i] for i in selected_indices]
             model_timestamps = [timestamps[i] for i in selected_indices]
@@ -100,28 +100,36 @@ class AnalysisService:
             model_crops = crops
             model_timestamps = timestamps
 
-        # 4. Run the detector.
-        # If no trained model is integrated, the detector should return
-        # MODEL_UNAVAILABLE rather than inventing a prediction.
-        prediction = detector.predict(model_crops, model_timestamps)
+        # 4. Run the detector. With the model loaded it also writes a Grad-CAM
+        # heatmap of the most suspicious frame to output_path.
+        output_name = f"{uuid.uuid4().hex}.jpg"
+        output_path = settings.output_dir / output_name
 
-        # 5. Generate a development-only heatmap.
+        prediction = detector.predict(
+            model_crops,
+            model_timestamps,
+            heatmap_path=output_path if detector.available and model_crops else None,
+        )
+
+        # 5. Heatmap: real Grad-CAM from the model, or a debug overlay in demo mode.
         heatmap_url = None
         note = None
 
-        if first_heatmap_frame is not None:
-            output_name = f"{uuid.uuid4().hex}.jpg"
-            output_path = settings.output_dir / output_name
-
+        if prediction.heatmap_written:
+            heatmap_url = f"/outputs/{output_name}"
+            note = (
+                "Grad-CAM: red areas influenced the fake score most, "
+                "shown on the most suspicious frame."
+            )
+        elif first_heatmap_frame is not None:
             heatmap_service.create_debug_heatmap(
                 first_heatmap_frame,
                 output_path,
             )
-
             heatmap_url = f"/outputs/{output_name}"
             note = (
-                "Development heatmap only. "
-                "Replace with true Grad-CAM after model integration."
+                "Development heatmap only (demo mode). "
+                "Grad-CAM is produced when the model is loaded."
             )
 
         # 6. Record processing time and analytics.
