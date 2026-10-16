@@ -30,11 +30,11 @@ class Settings(BaseSettings):
     frame_size: tuple[int, int] = (224, 224)
     face_crop_margin: float = 1.3
 
-    model_name: str = "DeepGuard Spatiotemporal Detector"
-    model_version: str = "0.1.0-demo"
+    model_name: str = "DeepGuard Spatiotemporal Detector (EfficientNet-B0 + BiLSTM)"
+    model_version: str = "1.0.0"
 
-    # Keep this TRUE until your actual trained model is integrated.
-    demo_mode: bool = True
+    # True = skip the model and return MODEL_UNAVAILABLE (no torch needed).
+    demo_mode: bool = False
 
     cors_origins: list[str] = [
         "http://localhost:5173",
@@ -43,7 +43,10 @@ class Settings(BaseSettings):
     upload_dir: Path = BASE_DIR / "uploads"
     output_dir: Path = BASE_DIR / "outputs"
 
-    model_path: str = ""
+    # Relative paths are resolved from the backend/ folder.
+    model_path: str = "models/deepguard_v1.pt"
+    # "" = auto (CUDA if available, else CPU); or "cpu" / "cuda".
+    model_device: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",

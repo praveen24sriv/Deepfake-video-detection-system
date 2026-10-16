@@ -30,7 +30,7 @@ class SuspiciousTimeline(BaseModel):
 
 class DetectionResult(BaseModel):
     verdict: str = Field(
-        description="REAL, FAKE, or MODEL_UNAVAILABLE"
+        description="REAL, FAKE, NO_FACE, or MODEL_UNAVAILABLE"
     )
 
     fake: bool | None = None

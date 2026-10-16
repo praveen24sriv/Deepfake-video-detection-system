@@ -113,44 +113,42 @@ class VideoService:
             frame_count,
         )
 
-        indexes = np.linspace(
-            0,
-            frame_count - 1,
-            num=sample_count,
-            dtype=int,
+        # Rounded (not truncated) indexes: same frames as the training preprocessing.
+        wanted = set(
+            np.linspace(
+                0,
+                frame_count - 1,
+                num=sample_count,
+            ).round().astype(int).tolist()
         )
+        last = max(wanted)
 
+        # Read frames in order (grab/retrieve) instead of seeking with
+        # CAP_PROP_POS_FRAMES: seeking in compressed H.264 can land on a
+        # different frame. This is how the training frames were read.
         samples = []
+        index = 0
 
-        seen = set()
+        while index <= last:
 
-        for index in indexes.tolist():
+            if not capture.grab():
+                break
 
-            if index in seen:
-                continue
+            if index in wanted:
 
-            seen.add(index)
+                success, frame = capture.retrieve()
 
-            capture.set(
-                cv2.CAP_PROP_POS_FRAMES,
-                index,
-            )
+                if success and frame is not None:
 
-            success, frame = capture.read()
+                    samples.append(
+                        FrameSample(
+                            index=index,
+                            timestamp=index / fps,
+                            frame=frame,
+                        )
+                    )
 
-            if not success:
-                continue
-
-            if frame is None:
-                continue
-
-            samples.append(
-                FrameSample(
-                    index=index,
-                    timestamp=index / fps,
-                    frame=frame,
-                )
-            )
+            index += 1
 
         return samples
 

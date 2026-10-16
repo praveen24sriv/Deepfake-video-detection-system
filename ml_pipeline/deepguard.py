@@ -28,7 +28,8 @@ import torch.nn.functional as F
 import torchvision
 
 # ---------------------------------------------------------------- settings
-N_FRAMES = 16
+N_FRAMES = 16          # frames the model sees
+N_EXTRACT = 32         # frames sampled and cropped per video (training preprocessing)
 CROP_SIZE = 224
 MARGIN = 1.3
 MEAN = (0.485, 0.456, 0.406)
@@ -113,6 +114,13 @@ class FaceCropper:
         if first is None:
             return [], detected
         return [first if c is None else c for c in crops], detected
+
+
+def as_training_jpeg(crop_rgb: np.ndarray, quality: int = 95) -> np.ndarray:
+    """Training crops were saved as JPEG (quality 95) and read back; apply the same round trip
+    so the model sees inputs exactly like the ones it was trained and evaluated on."""
+    ok, buf = cv2.imencode(".jpg", cv2.cvtColor(crop_rgb, cv2.COLOR_RGB2BGR), [cv2.IMWRITE_JPEG_QUALITY, quality])
+    return cv2.cvtColor(cv2.imdecode(buf, cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB) if ok else crop_rgb
 
 
 def to_tensor(crops) -> torch.Tensor:
@@ -255,8 +263,13 @@ class DeepGuardPredictor:
         return self._cropper
 
     def predict_video(self, path, heatmap_path=None) -> dict:
-        frames, timestamps, _ = sample_frames(path, self.n_frames)
+        # Same as training: 32 frames sampled and cropped, then 16 of them (rounded linspace).
+        frames, timestamps, _ = sample_frames(path, N_EXTRACT)
         crops, detected = self.cropper.crop(frames)
+        if len(crops) > self.n_frames:
+            keep = np.linspace(0, len(crops) - 1, self.n_frames).round().astype(int)
+            crops = [crops[i] for i in keep]
+            timestamps = [timestamps[i] for i in keep]
         stats = dict(
             frames_sampled=len(frames),
             faces_detected=int(sum(detected)),
@@ -272,6 +285,7 @@ class DeepGuardPredictor:
         """Crops must come from FaceCropper (RGB, 224x224). Resampled to the trained frame count."""
         if len(crops) != self.n_frames:
             crops, timestamps = resample(crops, self.n_frames), resample(list(timestamps), self.n_frames)
+        crops = [as_training_jpeg(c) for c in crops]
         clip = to_tensor(crops).to(self.device)
         with torch.no_grad():
             video_logit, frame_logits = self.model(clip.unsqueeze(0))
