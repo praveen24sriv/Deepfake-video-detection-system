@@ -7,13 +7,12 @@ deepguard_v1.pt into backend/models/ (see backend/models/README.md).
 
 Contract with analysis_service:
     predict(crops, timestamps, heatmap_path)
-    - crops: face crops from face_service.crop_largest (BGR, 224x224, 1.3x margin)
-    - converted to RGB here, because the model was trained on RGB crops
+    - crops: RGB face crops from deepguard.FaceCropper (the training cropper),
+      224x224, 1.3x margin, in time order
 """
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import cv2
 import numpy as np
 
 from app.config import BASE_DIR, settings
@@ -88,8 +87,7 @@ class DeepfakeDetector:
         if not self.available:
             return _empty("MODEL_UNAVAILABLE")
 
-        rgb_crops = [cv2.cvtColor(c, cv2.COLOR_BGR2RGB) for c in crops]
-        result = self.predictor.predict_crops(rgb_crops, timestamps, heatmap_path=heatmap_path)
+        result = self.predictor.predict_crops(crops, timestamps, heatmap_path=heatmap_path)
 
         return Prediction(
             verdict=result["verdict"],

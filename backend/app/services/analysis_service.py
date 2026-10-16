@@ -3,6 +3,7 @@ import time
 import uuid
 import statistics
 
+import cv2
 import numpy as np
 
 from app.config import settings
@@ -16,11 +17,19 @@ from app.schemas.analysis import (
     SuspiciousTimeline,
     VideoStats,
 )
+from app.services.deepguard import FaceCropper, blur_score
 from app.services.detector import detector
-from app.services.face_service import face_service
 from app.services.heatmap_service import heatmap_service
-from app.services.quality_service import quality_service
 from app.services.video_service import video_service
+
+
+def select_evenly(items, n):
+    """Pick n items spread evenly over the list, keeping order (rounded linspace).
+    Same rule as training and DeepGuardPredictor.predict_video: 16 of 32 crops."""
+    if len(items) <= n:
+        return list(items)
+    keep = np.linspace(0, len(items) - 1, n).round().astype(int)
+    return [items[i] for i in keep]
 
 
 class AnalysisService:
@@ -29,9 +38,17 @@ class AnalysisService:
         self.fake_videos = 0
         self.real_videos = 0
         self.processing_times = []
+        self.face_cropper = None
 
     def initialize(self):
         detector.initialize()
+        # Face cropping uses the SAME FaceCropper as the training preprocessing
+        # (deepguard.py): MTCNN, largest face, square 1.3x crop clamped to the frame,
+        # last box reused when a frame has no detection, leading frames back-filled.
+        if detector.available:
+            self.face_cropper = detector.predictor.cropper
+        else:
+            self.face_cropper = FaceCropper(device=settings.model_device or None)
 
     def analyze(self, video_path, original_filename: str) -> AnalysisResponse:
         start_time = time.perf_counter()
@@ -42,63 +59,35 @@ class AnalysisService:
         frames_read = len(inspection.samples)
         frames_sampled = len(inspection.samples)
 
-        faces_detected = 0
-        frames_without_face = 0
-        blurred_frames = 0
-        usable_frames = 0
+        # 2. Face crops, exactly as in training (deepguard.FaceCropper).
+        # Every sampled frame keeps its place in time: a frame without a detected
+        # face reuses the last face box, frames before the first detection are
+        # back-filled. No face in the whole video -> no crops -> NO_FACE verdict.
+        frames_rgb = [
+            cv2.cvtColor(sample.frame, cv2.COLOR_BGR2RGB)
+            for sample in inspection.samples
+        ]
+        timestamps = [sample.timestamp for sample in inspection.samples]
 
-        crops = []
-        timestamps = []
-        blur_scores = []
+        crops, detected = self.face_cropper.crop(frames_rgb)   # RGB, 224x224
 
-        first_heatmap_frame = None
+        faces_detected = int(sum(detected))
+        frames_without_face = len(detected) - faces_detected
+        usable_frames = len(crops)
 
-        # 2. Detect faces, crop them, and measure image quality.
-        # Blurry frames are measured but are NOT discarded.
-        for sample in inspection.samples:
-            boxes = face_service.detect(sample.frame)
+        # Blur is measured as a statistic only; blurry crops are NOT discarded.
+        blur_scores = [blur_score(crop) for crop in crops]
+        blurred_frames = sum(
+            score < settings.blur_threshold for score in blur_scores
+        )
 
-            if not boxes:
-                frames_without_face += 1
-                continue
-
-            faces_detected += 1
-
-            crop = face_service.crop_largest(sample.frame, boxes)
-
-            if crop is None:
-                frames_without_face += 1
-                continue
-
-            blur_score = quality_service.laplacian_variance(crop)
-            blur_scores.append(blur_score)
-
-            if blur_score < settings.blur_threshold:
-                blurred_frames += 1
-
-            # Keep blurry crops too; blur is only recorded as a statistic.
-            usable_frames += 1
-            crops.append(crop)
-            timestamps.append(sample.timestamp)
-
-            if first_heatmap_frame is None:
-                first_heatmap_frame = crop
-
-        # 3. Select at most settings.sample_frames crops for model inference.
-        # Selection is distributed across the available valid face crops.
-        if len(crops) > settings.sample_frames:
-            # Rounded like training (16 of 32 -> frames 0, 2, ... 14, 17, 19, ... 31).
-            selected_indices = np.linspace(
-                0,
-                len(crops) - 1,
-                num=settings.sample_frames,
-            ).round().astype(int).tolist()
-
-            model_crops = [crops[i] for i in selected_indices]
-            model_timestamps = [timestamps[i] for i in selected_indices]
+        # 3. 16 of the 32 crops for the model (same rule as training).
+        if crops:
+            model_crops = select_evenly(crops, settings.sample_frames)
+            model_timestamps = select_evenly(timestamps, settings.sample_frames)
         else:
-            model_crops = crops
-            model_timestamps = timestamps
+            model_crops = []
+            model_timestamps = []
 
         # 4. Run the detector. With the model loaded it also writes a Grad-CAM
         # heatmap of the most suspicious frame to output_path.
@@ -121,9 +110,9 @@ class AnalysisService:
                 "Grad-CAM: red areas influenced the fake score most, "
                 "shown on the most suspicious frame."
             )
-        elif first_heatmap_frame is not None:
+        elif crops:
             heatmap_service.create_debug_heatmap(
-                first_heatmap_frame,
+                cv2.cvtColor(crops[0], cv2.COLOR_RGB2BGR),
                 output_path,
             )
             heatmap_url = f"/outputs/{output_name}"
